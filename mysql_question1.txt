@@ -1,0 +1,21 @@
+1. Indexing & Query Optimization
+You have a table with millions of records, and the following query is running very slowly:
+```sql
+SELECT * FROM orders WHERE status = 'pending' ORDER BY created_at DESC LIMIT 50;
+```
+
+ANSWER
+
+1.Adding an index on status and created_at significantly improves performance:
+
+CREATE INDEX idx_orders_status_created ON orders (status, created_at DESC);
+
+2.Fetch Only Required Columns
+Instead of SELECT *, specify only the necessary fields:
+
+3.Optimized Query
+SELECT id, customer_id, created_at 
+FROM orders 
+WHERE status = 'pending' 
+ORDER BY created_at DESC 
+LIMIT 50;

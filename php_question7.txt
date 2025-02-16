@@ -1,0 +1,23 @@
+Session Management & Performance
+How would you manage PHP sessions for a high-traffic website with multiple web servers?
+
+ANSWER
+
+Best Solutions for Scalable PHP Session Management
+- Store Sessions in Redis (Best Performance)
+Using Redis for session storage is fast, scalable, and supports replication.
+
+How to Set It Up?
+1️. Install Redis & PHP Extension:
+sudo apt install redis
+sudo apt install php-redis
+
+2.Configure php.ini to use Redis for Sessions
+Modify php.ini
+session.save_handler = redis
+session.save_path = "tcp://127.0.0.1:6379"
+
+3.Start Using Sessions in PHP
+session_start();
+$_SESSION['user'] = 'John';
+

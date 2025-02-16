@@ -1,0 +1,69 @@
+Data Integrity & Transactions
+Q.Explain why and how you would use transactions in PHP and MySQL when handling an e-commerce order process that involves multiple related database inserts (e.g., order, order_items, payments).
+
+ANSWER:
+Why Use Transactions?
+When a customer places an order in an e-commerce system, multiple related database operations need to happen:
+
+1️.Create the order in the orders table.
+2️.Save order items in the order_items table.
+3️.Process payment and save it in the payments table.
+
+Problem Without Transactions:
+If the payment fails after inserting the order, we are left with an incomplete order in the database.
+This means the user could have an order without items or payment, causing data inconsistency.
+
+Solution: 
+Use transactions to ensure that either all operations succeed or none are committed. 
+This keeps the database consistent.
+
+How to Use Transactions in PHP & MySQL
+We use MySQL transactions with BEGIN TRANSACTION, COMMIT, and ROLLBACK to manage the entire order process safely.
+
+Here’s a secure PHP script that processes an order using transactions:
+
+<?php
+function placeOrder($userId, $items, $totalAmount, $paymentMethod, PDO $db) {
+    try {
+        // Begin the transaction
+        $db->beginTransaction();
+
+        // 1️.Insert the order into the orders table
+        $stmt = $db->prepare("INSERT INTO orders (user_id, total_amount, status) VALUES (?, ?, 'pending')");
+        $stmt->execute([$userId, $totalAmount]);
+        $orderId = $db->lastInsertId(); // Get the ID of the new order
+
+        // 2️.Insert each item into the order_items table
+        $stmt = $db->prepare("INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)");
+        foreach ($items as $item) {
+            $stmt->execute([$orderId, $item['product_id'], $item['quantity'], $item['price']]);
+        }
+
+        // 3️.Process the payment and insert into payments table
+        $stmt = $db->prepare("INSERT INTO payments (order_id, amount, method, status) VALUES (?, ?, ?, 'completed')");
+        $stmt->execute([$orderId, $totalAmount, $paymentMethod]);
+
+        //Commit the transaction (if all steps succeed)
+        $db->commit();
+        return "Order placed successfully! Order ID: " . $orderId;
+
+    } catch (Exception $e) {
+        // Rollback on failure (undo all previous inserts)
+        $db->rollBack();
+        return "Transaction failed: " . $e->getMessage();
+    }
+}
+
+// Example usage:
+$db = new PDO('mysql:host=localhost;dbname=ecommerce', 'root', ''); // Connect to database
+$userId = 1;
+$items = [
+    ['product_id' => 101, 'quantity' => 2, 'price' => 15.00],
+    ['product_id' => 202, 'quantity' => 1, 'price' => 25.00]
+];
+$totalAmount = 55.00;
+$paymentMethod = 'credit_card';
+
+// Call the function to place the order
+echo placeOrder($userId, $items, $totalAmount, $paymentMethod, $db);
+

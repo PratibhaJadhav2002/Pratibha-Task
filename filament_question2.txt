@@ -1,0 +1,66 @@
+Custom Actions in Filament
+You need to add a custom "Approve" action in a Filament resource for a `Post` model. The action should update the `status` column to "approved" without refreshing the page
+
+ANSWER
+
+Step 1: Generate the Filament Resource
+php artisan make:filament-resource Post
+
+
+Step 2: Define the Custom "Approve" Action
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Models\Post;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+
+class PostResource extends Resource
+{
+    protected static ?string $model = Post::class;
+
+    public static function table(Tables\Table $table): Tables\Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('id')->label('ID')->sortable(),
+                Tables\Columns\TextColumn::make('title')->label('Title')->searchable(),
+                Tables\Columns\TextColumn::make('status')->label('Status')
+                    ->badge()
+                    ->colors([
+                        'pending' => 'warning',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                    ]),
+                Tables\Columns\TextColumn::make('created_at')->label('Created At')->dateTime(),
+            ])
+            ->actions([
+                Action::make('approve')
+                    ->label('Approve')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn (Post $record) => $record->status !== 'approved') // Hide if already approved
+                    ->action(fn (Post $record) => $record->update(['status' => 'approved']))
+                    ->requiresConfirmation()
+                    ->successNotificationTitle('Post approved successfully'),
+            ])
+            ->defaultSort('created_at', 'desc');
+    }
+}
+
+
+Step 4: Register Resource in Filament Panel
+use App\Filament\Resources\PostResource;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->resources([
+            PostResource::class,
+        ]);
+}
+
+Step 5: View the Action in Filament Admin
+php artisan serve

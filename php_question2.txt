@@ -1,0 +1,31 @@
+Security & Injection Prevention
+What's wrong with the following code? How would you fix it?
+```php
+$id = $_GET['id'];
+$result = mysqli_query($conn, "SELECT * FROM users WHERE id = $id");
+```
+
+
+ANSWER:
+The problem with the given code is that it directly includes user input 
+($_GET['id']) in the SQL query. This makes it vulnerable to SQL injection,
+ where an attacker can manipulate the query to access or modify the 
+database.
+If someone enters this in the URL: ?id=1 OR 1=1
+The query will become: SELECT * FROM users WHERE id = 1 OR 1=1
+Since 1=1 is always true, it would return all users instead of just one.
+
+
+The best way to fix this is by using prepared statements, which safely handle user input.
+
+$id = $_GET['id'];
+$stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->bind_param("i", $id); // Bind as an integer to prevent injection
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
+
+
+
+
+

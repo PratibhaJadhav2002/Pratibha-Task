@@ -1,0 +1,38 @@
+Caching Strategies
+Your Laravel app frequently queries a large dataset that rarely changes.
+How would you use caching to improve performance?
+
+ANSWER
+
+Step 1: Configure Cache Driver
+CACHE_DRIVER=redis
+
+If Redis is not available, use file or database instead.
+To use database caching, run:
+php artisan cache:table
+php artisan migrate
+
+Step 2: Cache Database Query Results
+use Illuminate\Support\Facades\Cache;
+use App\Models\Product;
+
+public function getProducts()
+{
+    return Cache::remember('products_list', now()->addMinutes(60), function () {
+        return Product::where('status', 'active')->orderBy('name')->get();
+    });
+}
+
+Step 3: Clearing the Cache When Data Changes
+use Illuminate\Support\Facades\Cache;
+
+protected static function booted()
+{
+    static::saved(fn() => Cache::forget('products_list'));
+    static::deleted(fn() => Cache::forget('products_list'));
+}
+
+Step 4: Manually Clearing the Cache
+php artisan cache:clear
+
+

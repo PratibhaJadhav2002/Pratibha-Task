@@ -1,0 +1,77 @@
+Queues & Background Jobs
+A user submits a form that triggers an email notification. How would you ensure the email is sent asynchronously in Laravel?
+
+ANSWER
+
+In Laravel, queues and background jobs to handle the email asynchronously, making the user experience faster and smoother.
+
+Step 1: Configure Queue Driver
+Open .env and set the queue driver to database
+
+QUEUE_CONNECTION=database
+
+php artisan queue:table
+php artisan migrate
+
+
+Step 2: Create the Mailable Class
+php artisan make:mail OrderConfirmationMail
+
+
+Modify the OrderConfirmationMail.php
+
+<?php
+
+namespace App\Mail;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
+
+class OrderConfirmationMail extends Mailable implements ShouldQueue
+{
+    use Queueable, SerializesModels;
+
+    public $order;
+
+    public function __construct($order)
+    {
+        $this->order = $order;
+    }
+
+    public function build()
+    {
+        return $this->subject('Order Confirmation')
+                    ->view('emails.order_confirmation')
+                    ->with(['order' => $this->order]);
+    }
+}
+
+
+Step 3: Dispatch Email to Queue
+
+use App\Mail\OrderConfirmationMail;
+use Illuminate\Support\Facades\Mail;
+
+public function placeOrder(Request $request)
+{
+    $order = Order::create([
+        'user_id' => auth()->id(),
+        'total' => $request->total,
+        'status' => 'pending'
+    ]);
+
+    // Queue the email instead of sending immediately
+    Mail::to(auth()->user()->email)->queue(new OrderConfirmationMail($order));
+
+    return response()->json(['message' => 'Order placed! Email will be sent shortly.']);
+}
+
+
+Step 4: Start the Queue Worker
+php artisan queue:work
+
+Step 5: Verify Email Queueing
+SELECT * FROM jobs;
+

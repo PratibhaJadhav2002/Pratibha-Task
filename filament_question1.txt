@@ -1,0 +1,60 @@
+Filament Tables & Filtering
+You need to create a Filament table that displays a list of users and allows filtering by role (`admin`, `editor`, `user`). How would you implement this in a Filament table resource?
+
+
+Step 1: Generate Filament Resource
+php artisan make:filament-resource User
+
+Step 2: Filament Table
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Models\User;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Filters\SelectFilter;
+
+class UserResource extends Resource
+{
+    protected static ?string $model = User::class;
+
+    public static function table(Tables\Table $table): Tables\Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('id')->label('ID')->sortable(),
+                Tables\Columns\TextColumn::make('name')->label('Name')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('email')->label('Email')->searchable(),
+                Tables\Columns\TextColumn::make('role')->label('Role')->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Created At')->dateTime(),
+            ])
+            ->filters([
+                SelectFilter::make('role')
+                    ->label('Filter by Role')
+                    ->options([
+                        'admin' => 'Admin',
+                        'editor' => 'Editor',
+                        'user' => 'User',
+                    ]),
+            ])
+            ->defaultSort('created_at', 'desc');
+    }
+}
+
+
+Step 3: Register Resource in Filament Panel
+use App\Filament\Resources\UserResource;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->resources([
+            UserResource::class,
+        ]);
+}
+
+
+Step 4: View the Table in Filament Admin
+php artisan serve
+
